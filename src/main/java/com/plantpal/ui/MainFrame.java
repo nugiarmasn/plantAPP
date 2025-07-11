@@ -4,19 +4,35 @@
  */
 package com.plantpal.ui;
 
+import java.io.FileOutputStream; // Import for writing to a file
+import java.io.ObjectOutputStream; // Import for object serialization
+import java.io.File; // Import for file operations
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+import java.util.ResourceBundle;
+import javax.swing.JFileChooser; // Import JFileChooser for file dialog
+import javax.swing.Timer;
 
 /**
  *
  * @author NUGI ARMAS
  */
 public class MainFrame extends javax.swing.JFrame {
+
+    private String selectedPlantName = null;
+    private ResourceBundle bundle;
 
     /**
      * Creates new form MainFrame
@@ -26,13 +42,40 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     public MainFrame(String username) {
-    initComponents();
-    tampilkanDataKeTabel();
-}
+        initComponents();
+        tampilkanDataKeTabel();
+        initDateTimeUpdater();
+        setDefaultLanguage();
+    }
 
+    private void setDefaultLanguage() {
+        Locale defaultLocale = new Locale("id", "ID");
+        bundle = ResourceBundle.getBundle("Messages", defaultLocale);
+        applyLanguage();
+    }
+
+//    Internasionalisasi
+    private void applyLanguage() {
+        setTitle(bundle.getString("MainFrame.app.title"));
+        labelName.setText(bundle.getString("MainFrame.label.name"));
+        labelType.setText(bundle.getString("MainFrame.label.type"));
+        labelWateringInterval.setText(bundle.getString("MainFrame.label.wateringInterval"));
+        labelLastWatered.setText(bundle.getString("MainFrame.label.lastWatered"));
+        labelNextSchedule.setText(bundle.getString("MainFrame.label.nextSchedule"));
+        schedulePanel.setText(bundle.getString("MainFrame.label.schedulePanel"));
+        
+        buttonAddPlant.setText(bundle.getString("MainFrame.button.addPlant"));
+        buttonEditChanges.setText(bundle.getString("MainFrame.button.editChanges"));
+        buttonDeletePlant.setText(bundle.getString("MainFrame.button.deletePlant"));
+        buttonExportPlant.setText(bundle.getString("MainFrame.button.exportPlant"));
+        buttonLogout.setText(bundle.getString("MainFrame.button.logout"));
+
+        table.getColumnModel().getColumn(0).setHeaderValue(bundle.getString("MainFrame.table.column.plantName"));
+        table.getTableHeader().repaint();
+    }
 
     private List<Tanaman> ambilDataTanaman() {
-        List<Tanaman> daftar = new ArrayList<>();
+        List<Tanaman> daftar = new ArrayList<>(); // Generics digunakan di sini
 
         try {
             Koneksi koneksi = new Koneksi();
@@ -72,24 +115,28 @@ public class MainFrame extends javax.swing.JFrame {
         jPanel1 = new javax.swing.JPanel();
         jPanel2 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
-        jButton3 = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
-        jTable1 = new javax.swing.JTable();
-        jButton5 = new javax.swing.JButton();
-        jLabel2 = new javax.swing.JLabel();
-        jLabel3 = new javax.swing.JLabel();
+        table = new javax.swing.JTable();
+        buttonExportPlant = new javax.swing.JButton();
+        buttonLogout = new javax.swing.JButton();
+        schedulePanel = new javax.swing.JLabel();
+        labelName = new javax.swing.JLabel();
         jTextField1 = new javax.swing.JTextField();
         jLabel4 = new javax.swing.JLabel();
-        jLabel5 = new javax.swing.JLabel();
+        labelType = new javax.swing.JLabel();
         jTextField2 = new javax.swing.JTextField();
-        jLabel6 = new javax.swing.JLabel();
+        labelWateringInterval = new javax.swing.JLabel();
         jTextField3 = new javax.swing.JTextField();
-        jLabel7 = new javax.swing.JLabel();
-        jTextField4 = new javax.swing.JTextField();
-        jLabel8 = new javax.swing.JLabel();
-        jTextField5 = new javax.swing.JTextField();
-        jButton4 = new javax.swing.JButton();
-        jButton2 = new javax.swing.JButton();
+        labelLastWatered = new javax.swing.JLabel();
+        labelNextSchedule = new javax.swing.JLabel();
+        buttonEditChanges = new javax.swing.JButton();
+        buttonAddPlant = new javax.swing.JButton();
+        jDateChooser1 = new com.toedter.calendar.JDateChooser();
+        jDateChooser2 = new com.toedter.calendar.JDateChooser();
+        buttonDeletePlant = new javax.swing.JButton();
+        labelDate = new javax.swing.JLabel();
+        labelTime = new javax.swing.JLabel();
+        cmbChooseLanguage = new javax.swing.JComboBox<>();
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -108,16 +155,7 @@ public class MainFrame extends javax.swing.JFrame {
 
         jLabel1.setText("PlantPal");
 
-        jButton3.setBackground(new java.awt.Color(255, 51, 51));
-        jButton3.setForeground(new java.awt.Color(255, 255, 255));
-        jButton3.setText("Hapus Tanaman");
-        jButton3.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton3ActionPerformed(evt);
-            }
-        });
-
-        jTable1.setModel(new javax.swing.table.DefaultTableModel(
+        table.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null},
                 {null},
@@ -128,15 +166,30 @@ public class MainFrame extends javax.swing.JFrame {
                 "Nama Tanaman"
             }
         ));
-        jScrollPane1.setViewportView(jTable1);
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tableMouseClicked(evt);
+            }
+        });
+        jScrollPane1.setViewportView(table);
 
-        jButton5.setBackground(new java.awt.Color(0, 204, 0));
-        jButton5.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        jButton5.setForeground(new java.awt.Color(255, 255, 255));
-        jButton5.setText("Ekport Tanaman");
-        jButton5.addActionListener(new java.awt.event.ActionListener() {
+        buttonExportPlant.setBackground(new java.awt.Color(0, 204, 0));
+        buttonExportPlant.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        buttonExportPlant.setForeground(new java.awt.Color(255, 255, 255));
+        buttonExportPlant.setText("Ekport Tanaman");
+        buttonExportPlant.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton5ActionPerformed(evt);
+                buttonExportPlantActionPerformed(evt);
+            }
+        });
+
+        buttonLogout.setBackground(new java.awt.Color(0, 204, 0));
+        buttonLogout.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        buttonLogout.setForeground(new java.awt.Color(255, 255, 255));
+        buttonLogout.setText("LogOut");
+        buttonLogout.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                buttonLogoutActionPerformed(evt);
             }
         });
 
@@ -147,12 +200,12 @@ public class MainFrame extends javax.swing.JFrame {
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jButton5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(buttonExportPlant, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
                         .addGap(0, 17, Short.MAX_VALUE)
                         .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 202, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                    .addComponent(jButton3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(buttonLogout, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel2Layout.setVerticalGroup(
@@ -163,18 +216,18 @@ public class MainFrame extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 411, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(jButton5)
+                .addComponent(buttonExportPlant)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jButton3)
-                .addContainerGap(17, Short.MAX_VALUE))
+                .addComponent(buttonLogout)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
-        jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        jLabel2.setForeground(new java.awt.Color(51, 51, 51));
-        jLabel2.setText("Jadwal Perawatan Tanaman");
+        schedulePanel.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        schedulePanel.setForeground(new java.awt.Color(51, 51, 51));
+        schedulePanel.setText("Jadwal Perawatan Tanaman");
 
-        jLabel3.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        jLabel3.setText("Nama:");
+        labelName.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        labelName.setText("Nama:");
 
         jTextField1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -184,8 +237,8 @@ public class MainFrame extends javax.swing.JFrame {
 
         jLabel4.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
 
-        jLabel5.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        jLabel5.setText("Jenis:");
+        labelType.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        labelType.setText("Jenis:");
 
         jTextField2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -193,8 +246,8 @@ public class MainFrame extends javax.swing.JFrame {
             }
         });
 
-        jLabel6.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        jLabel6.setText("Interval Penyiraman :");
+        labelWateringInterval.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        labelWateringInterval.setText("Interval Penyiraman :");
 
         jTextField3.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -202,41 +255,50 @@ public class MainFrame extends javax.swing.JFrame {
             }
         });
 
-        jLabel7.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        jLabel7.setText("Terakhir Disiram:");
+        labelLastWatered.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        labelLastWatered.setText("Terakhir Disiram:");
 
-        jTextField4.addActionListener(new java.awt.event.ActionListener() {
+        labelNextSchedule.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        labelNextSchedule.setText("Jadwal Berikutnya");
+
+        buttonEditChanges.setBackground(new java.awt.Color(0, 204, 0));
+        buttonEditChanges.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        buttonEditChanges.setForeground(new java.awt.Color(255, 255, 255));
+        buttonEditChanges.setText("Edit Perubahan");
+        buttonEditChanges.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextField4ActionPerformed(evt);
+                buttonEditChangesActionPerformed(evt);
             }
         });
 
-        jLabel8.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        jLabel8.setText("Jadwal Berikutnya");
-
-        jTextField5.addActionListener(new java.awt.event.ActionListener() {
+        buttonAddPlant.setBackground(new java.awt.Color(0, 204, 0));
+        buttonAddPlant.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        buttonAddPlant.setForeground(new java.awt.Color(255, 255, 255));
+        buttonAddPlant.setText("Tambah Tanaman");
+        buttonAddPlant.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextField5ActionPerformed(evt);
+                buttonAddPlantActionPerformed(evt);
             }
         });
 
-        jButton4.setBackground(new java.awt.Color(0, 204, 0));
-        jButton4.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        jButton4.setForeground(new java.awt.Color(255, 255, 255));
-        jButton4.setText("Simpan Perubahan");
-        jButton4.addActionListener(new java.awt.event.ActionListener() {
+        buttonDeletePlant.setBackground(new java.awt.Color(255, 51, 51));
+        buttonDeletePlant.setForeground(new java.awt.Color(255, 255, 255));
+        buttonDeletePlant.setText("Hapus Tanaman");
+        buttonDeletePlant.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton4ActionPerformed(evt);
+                buttonDeletePlantActionPerformed(evt);
             }
         });
 
-        jButton2.setBackground(new java.awt.Color(0, 204, 0));
-        jButton2.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        jButton2.setForeground(new java.awt.Color(255, 255, 255));
-        jButton2.setText("Tambah Tanaman");
-        jButton2.addActionListener(new java.awt.event.ActionListener() {
+        labelDate.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        labelDate.setText("jLabel9");
+
+        labelTime.setText("jLabel10");
+
+        cmbChooseLanguage.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Indonesia", "English" }));
+        cmbChooseLanguage.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton2ActionPerformed(evt);
+                cmbChooseLanguageActionPerformed(evt);
             }
         });
 
@@ -248,81 +310,98 @@ public class MainFrame extends javax.swing.JFrame {
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(109, 109, 109)
-                                .addComponent(jLabel2))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(24, 24, 24)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addComponent(jLabel8)
-                                        .addGap(39, 39, 39)
-                                        .addComponent(jTextField5, javax.swing.GroupLayout.DEFAULT_SIZE, 186, Short.MAX_VALUE))
-                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addComponent(jLabel7)
-                                            .addComponent(jLabel6))
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                            .addComponent(jTextField2, javax.swing.GroupLayout.DEFAULT_SIZE, 186, Short.MAX_VALUE)
-                                            .addComponent(jTextField4)))
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addGap(2, 2, 2)
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addComponent(jLabel5)
-                                            .addComponent(jLabel3))
-                                        .addGap(106, 106, 106)
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                            .addComponent(jTextField3, javax.swing.GroupLayout.DEFAULT_SIZE, 186, Short.MAX_VALUE)
-                                            .addComponent(jTextField1))))))
-                        .addGap(0, 0, Short.MAX_VALUE))
+                        .addGap(156, 156, 156)
+                        .addComponent(jLabel4)
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addGap(61, 61, 61)
-                                .addComponent(jButton4)
-                                .addGap(18, 18, 18)
-                                .addComponent(jButton2))
+                                .addGap(109, 109, 109)
+                                .addComponent(schedulePanel))
                             .addGroup(layout.createSequentialGroup()
-                                .addGap(156, 156, 156)
-                                .addComponent(jLabel4)))
-                        .addContainerGap(26, Short.MAX_VALUE))))
+                                .addGap(24, 24, 24)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addGap(2, 2, 2)
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                            .addComponent(labelType)
+                                            .addComponent(labelName))
+                                        .addGap(106, 106, 106)
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                            .addComponent(jTextField3, javax.swing.GroupLayout.DEFAULT_SIZE, 186, Short.MAX_VALUE)
+                                            .addComponent(jTextField1)))
+                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                    .addComponent(labelLastWatered)
+                                                    .addComponent(labelWateringInterval))
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED))
+                                            .addGroup(layout.createSequentialGroup()
+                                                .addComponent(labelNextSchedule)
+                                                .addGap(38, 38, 38)))
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                            .addComponent(jTextField2, javax.swing.GroupLayout.DEFAULT_SIZE, 186, Short.MAX_VALUE)
+                                            .addComponent(jDateChooser1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                            .addComponent(jDateChooser2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))
+                            .addGroup(layout.createSequentialGroup()
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(buttonEditChanges)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(buttonAddPlant)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(buttonDeletePlant)
+                                        .addGap(0, 5, Short.MAX_VALUE))
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(labelDate, javax.swing.GroupLayout.PREFERRED_SIZE, 174, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(labelTime, javax.swing.GroupLayout.PREFERRED_SIZE, 96, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(cmbChooseLanguage, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                        .addContainerGap())))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 526, Short.MAX_VALUE)
+            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addGroup(layout.createSequentialGroup()
                 .addGap(20, 20, 20)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel2)
+                        .addComponent(schedulePanel)
                         .addGap(41, 41, 41)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel3)
+                            .addComponent(labelName)
                             .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(34, 34, 34)
-                        .addComponent(jLabel5))
+                        .addComponent(labelType))
                     .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(33, 33, 33)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(labelWateringInterval, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(26, 26, 26)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(labelLastWatered, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jDateChooser1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(24, 24, 24)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(labelNextSchedule, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jDateChooser2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(50, 50, 50)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel7, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(26, 26, 26)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel8, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(47, 47, 47)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButton4)
-                    .addComponent(jButton2))
-                .addGap(113, 113, 113)
+                    .addComponent(buttonEditChanges)
+                    .addComponent(buttonAddPlant)
+                    .addComponent(buttonDeletePlant))
+                .addGap(112, 112, 112)
                 .addComponent(jLabel4)
-                .addGap(0, 0, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 7, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(labelDate)
+                    .addComponent(labelTime)
+                    .addComponent(cmbChooseLanguage, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap())
         );
 
         pack();
@@ -340,29 +419,268 @@ public class MainFrame extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField3ActionPerformed
 
-    private void jTextField4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField4ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField4ActionPerformed
+    private void buttonAddPlantActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonAddPlantActionPerformed
+        // Get data from text fields
+        String nama = jTextField1.getText();
+        String jenis = jTextField3.getText(); // Assuming jTextField3 is for 'jenis' based on GUI
+        String deskripsi = ""; // You don't have a specific text field for description in your GUI, so it's empty
+        int interval;
+        Date terakhirDisiram = null;
+        Date jadwalBerikutnya = null;
 
-    private void jTextField5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField5ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField5ActionPerformed
+        // Basic validation for name and interval
+        if (nama.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Nama tanaman tidak boleh kosong.", "Input Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton2ActionPerformed
+        try {
+            interval = Integer.parseInt(jTextField2.getText()); // Assuming jTextField2 is for 'interval' based on GUI
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Interval penyiraman harus angka.", "Input Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton3ActionPerformed
+        // Get dates from JDateChooser components
+        java.util.Date utilTerakhirDisiram = jDateChooser1.getDate();
+        java.util.Date utilJadwalBerikutnya = jDateChooser2.getDate();
 
-    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton4ActionPerformed
+        // Convert util.Date to sql.Date
+        if (utilTerakhirDisiram != null) {
+            terakhirDisiram = new Date(utilTerakhirDisiram.getTime());
+        }
+        if (utilJadwalBerikutnya != null) {
+            jadwalBerikutnya = new Date(utilJadwalBerikutnya.getTime());
+        }
 
-    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton5ActionPerformed
+        // Insert data into the database
+        try {
+            Koneksi koneksi = new Koneksi();
+            Connection conn = koneksi.connect();
+            String sql = "INSERT INTO tanaman (nama, jenis, deskripsi, interval_penyiraman, terakhir_disiram, jadwal_berikutnya) VALUES (?, ?, ?, ?, ?, ?)";
+            PreparedStatement pst = conn.prepareStatement(sql);
+            pst.setString(1, nama);
+            pst.setString(2, jenis);
+            pst.setString(3, deskripsi);
+            pst.setInt(4, interval);
+            pst.setDate(5, terakhirDisiram);
+            pst.setDate(6, jadwalBerikutnya);
+
+            int rowsAffected = pst.executeUpdate();
+
+            if (rowsAffected > 0) {
+                JOptionPane.showMessageDialog(this, "Tanaman berhasil ditambahkan.");
+                tampilkanDataKeTabel(); // Refresh the table
+                // Clear the text fields and JDateChoosers after successful addition
+                jTextField1.setText("");
+                jTextField2.setText("");
+                jTextField3.setText("");
+                jDateChooser1.setDate(null);
+                jDateChooser2.setDate(null);
+            } else {
+                JOptionPane.showMessageDialog(this, "Gagal menambahkan tanaman.");
+            }
+
+            conn.close();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error saat menambahkan data: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }//GEN-LAST:event_buttonAddPlantActionPerformed
+
+    private void buttonDeletePlantActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonDeletePlantActionPerformed
+        // Check if a plant is selected
+        if (selectedPlantName == null || selectedPlantName.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Pilih tanaman dari tabel yang ingin Anda hapus.", "Peringatan", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Confirmation dialog
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Anda yakin ingin menghapus tanaman '" + selectedPlantName + "'?",
+                "Konfirmasi Hapus",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                Koneksi koneksi = new Koneksi();
+                Connection conn = koneksi.connect();
+                // SQL DELETE statement. Using 'nama' for WHERE clause.
+                // It's safer to use a unique ID (primary key) if available.
+                String sql = "DELETE FROM tanaman WHERE nama = ?";
+                PreparedStatement pst = conn.prepareStatement(sql);
+                pst.setString(1, selectedPlantName);
+
+                int rowsAffected = pst.executeUpdate();
+
+                if (rowsAffected > 0) {
+                    JOptionPane.showMessageDialog(this, "Tanaman '" + selectedPlantName + "' berhasil dihapus.");
+                    tampilkanDataKeTabel(); // Refresh the table
+                    // Clear the input fields after successful deletion
+                    jTextField1.setText("");
+                    jTextField2.setText("");
+                    jTextField3.setText("");
+                    jDateChooser1.setDate(null);
+                    jDateChooser2.setDate(null);
+                    selectedPlantName = null; // Clear selected plant
+                } else {
+                    JOptionPane.showMessageDialog(this, "Gagal menghapus tanaman '" + selectedPlantName + "'.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+                conn.close();
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Error saat menghapus data: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+            }
+        }
+    }//GEN-LAST:event_buttonDeletePlantActionPerformed
+
+    private void buttonEditChangesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonEditChangesActionPerformed
+        if (selectedPlantName == null || selectedPlantName.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Pilih tanaman dari tabel yang ingin Anda edit.", "Peringatan", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Get updated data from text fields and date choosers
+        String newNama = jTextField1.getText();
+        String newJenis = jTextField3.getText();
+        String newDeskripsi = ""; // Assuming still no specific field for description
+        int newInterval;
+        Date newTerakhirDisiram = null;
+        Date newJadwalBerikutnya = null;
+
+        // Basic validation
+        if (newNama.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Nama tanaman tidak boleh kosong.", "Input Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        try {
+            newInterval = Integer.parseInt(jTextField2.getText());
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Interval penyiraman harus angka.", "Input Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Get dates from JDateChooser components
+        java.util.Date utilNewTerakhirDisiram = jDateChooser1.getDate();
+        java.util.Date utilNewJadwalBerikutnya = jDateChooser2.getDate();
+
+        // Convert util.Date to sql.Date
+        if (utilNewTerakhirDisiram != null) {
+            newTerakhirDisiram = new Date(utilNewTerakhirDisiram.getTime());
+        }
+        if (utilNewJadwalBerikutnya != null) {
+            newJadwalBerikutnya = new Date(utilNewJadwalBerikutnya.getTime());
+        }
+
+        // Update data in the database
+        try {
+            Koneksi koneksi = new Koneksi();
+            Connection conn = koneksi.connect();
+            String sql = "UPDATE tanaman SET nama = ?, jenis = ?, deskripsi = ?, interval_penyiraman = ?, terakhir_disiram = ?, jadwal_berikutnya = ? WHERE nama = ?"; // Using nama as WHERE clause
+            PreparedStatement pst = conn.prepareStatement(sql);
+            pst.setString(1, newNama);
+            pst.setString(2, newJenis);
+            pst.setString(3, newDeskripsi);
+            pst.setInt(4, newInterval);
+            pst.setDate(5, newTerakhirDisiram);
+            pst.setDate(6, newJadwalBerikutnya);
+            pst.setString(7, selectedPlantName); // Use the original selected name for the WHERE clause
+
+            int rowsAffected = pst.executeUpdate();
+
+            if (rowsAffected > 0) {
+                JOptionPane.showMessageDialog(this, "Perubahan tanaman berhasil disimpan.");
+                tampilkanDataKeTabel(); // Refresh the table
+                // Clear the text fields and JDateChoosers after successful update
+                jTextField1.setText("");
+                jTextField2.setText("");
+                jTextField3.setText("");
+                jDateChooser1.setDate(null);
+                jDateChooser2.setDate(null);
+                selectedPlantName = null; // Clear selected plant
+            } else {
+                JOptionPane.showMessageDialog(this, "Gagal menyimpan perubahan tanaman.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+
+            conn.close();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error saat mengedit data: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }//GEN-LAST:event_buttonEditChangesActionPerformed
+
+    private void buttonExportPlantActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonExportPlantActionPerformed
+        // 1. Get all plant data from the database
+        List<Tanaman> daftarTanaman = ambilDataTanaman();
+
+        if (daftarTanaman == null || daftarTanaman.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Tidak ada data tanaman untuk diekspor.", "Informasi", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+// 2. Open a file chooser dialog
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Simpan Data Tanaman");
+        fileChooser.setSelectedFile(new File("data_tanaman.ser")); // Default file name
+        int userSelection = fileChooser.showSaveDialog(this);
+
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File fileToSave = fileChooser.getSelectedFile();
+
+            // Ensure the file has a .ser extension
+            if (!fileToSave.getName().toLowerCase().endsWith(".ser")) {
+                fileToSave = new File(fileToSave.getAbsolutePath() + ".ser");
+            }
+
+            try (
+                    FileOutputStream fileOut = new FileOutputStream(fileToSave); ObjectOutputStream objectOut = new ObjectOutputStream(fileOut)) {
+                // 3. Write the list of Tanaman objects to the file
+                objectOut.writeObject(daftarTanaman);//Serialisasi
+
+                JOptionPane.showMessageDialog(this, "Data tanaman berhasil diekspor ke:\n" + fileToSave.getAbsolutePath(), "Ekspor Berhasil", JOptionPane.INFORMATION_MESSAGE);
+
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(this, "Gagal mengekspor data tanaman: " + e.getMessage(), "Ekspor Gagal", JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+            }
+        }
+
+    }//GEN-LAST:event_buttonExportPlantActionPerformed
+
+    private void tableMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tableMouseClicked
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow >= 0) {
+            DefaultTableModel model = (DefaultTableModel) table.getModel();
+            selectedPlantName = model.getValueAt(selectedRow, 0).toString(); // Get the name from the first column
+
+            // Now, retrieve the full plant data from the database based on selectedPlantName
+            // and populate the text fields and date choosers.
+            populateFieldsWithSelectedPlant(selectedPlantName);
+        }
+    }//GEN-LAST:event_tableMouseClicked
+
+    private void buttonLogoutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonLogoutActionPerformed
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Anda yakin ingin logout?",
+                "Konfirmasi Logout",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            // Tutup MainFrame
+            this.dispose();
+        }
+    }//GEN-LAST:event_buttonLogoutActionPerformed
+
+    private void cmbChooseLanguageActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbChooseLanguageActionPerformed
+        int selected = cmbChooseLanguage.getSelectedIndex();
+        if (selected == 0) { // Indonesia
+            bundle = ResourceBundle.getBundle("Messages", new Locale("id", "ID"));
+        } else if (selected == 1) { // English
+            bundle = ResourceBundle.getBundle("Messages", new Locale("en", "US"));
+        }
+        applyLanguage(); //Internasionalisasi
+    }//GEN-LAST:event_cmbChooseLanguageActionPerformed
 
     /**
      * @param args the command line arguments
@@ -400,44 +718,108 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton2;
-    private javax.swing.JButton jButton3;
-    private javax.swing.JButton jButton4;
-    private javax.swing.JButton jButton5;
+    private javax.swing.JButton buttonAddPlant;
+    private javax.swing.JButton buttonDeletePlant;
+    private javax.swing.JButton buttonEditChanges;
+    private javax.swing.JButton buttonExportPlant;
+    private javax.swing.JButton buttonLogout;
+    private javax.swing.JComboBox<String> cmbChooseLanguage;
+    private com.toedter.calendar.JDateChooser jDateChooser1;
+    private com.toedter.calendar.JDateChooser jDateChooser2;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
-    private javax.swing.JLabel jLabel6;
-    private javax.swing.JLabel jLabel7;
-    private javax.swing.JLabel jLabel8;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JTable jTable1;
     private javax.swing.JTextField jTextField1;
     private javax.swing.JTextField jTextField2;
     private javax.swing.JTextField jTextField3;
-    private javax.swing.JTextField jTextField4;
-    private javax.swing.JTextField jTextField5;
+    private javax.swing.JLabel labelDate;
+    private javax.swing.JLabel labelLastWatered;
+    private javax.swing.JLabel labelName;
+    private javax.swing.JLabel labelNextSchedule;
+    private javax.swing.JLabel labelTime;
+    private javax.swing.JLabel labelType;
+    private javax.swing.JLabel labelWateringInterval;
+    private javax.swing.JLabel schedulePanel;
+    private javax.swing.JTable table;
     // End of variables declaration//GEN-END:variables
 private void tampilkanDataKeTabel() {
-    List<Tanaman> daftar = ambilDataTanaman();
+        List<Tanaman> daftar = ambilDataTanaman();
 
-    DefaultTableModel model = new DefaultTableModel();
-    model.setColumnIdentifiers(new String[] {
-        "Nama"
-    });
-
-    for (Tanaman t : daftar) {
-        model.addRow(new Object[] {
-            t.getNama(),
-            
+        DefaultTableModel model = new DefaultTableModel();
+        model.setColumnIdentifiers(new String[]{
+            "Nama"
         });
+
+        for (Tanaman t : daftar) {
+            model.addRow(new Object[]{
+                t.getNama(),});
+        }
+
+        table.setModel(model);
     }
 
-    jTable1.setModel(model);
-}
+    private void populateFieldsWithSelectedPlant(String plantName) {
+        try {
+            Koneksi koneksi = new Koneksi();
+            Connection conn = koneksi.connect();
+            String sql = "SELECT nama, jenis, deskripsi, interval_penyiraman, terakhir_disiram, jadwal_berikutnya FROM tanaman WHERE nama = ?";
+            PreparedStatement pst = conn.prepareStatement(sql);
+            pst.setString(1, plantName);
+            ResultSet rs = pst.executeQuery();
+
+            if (rs.next()) {
+                jTextField1.setText(rs.getString("nama"));
+                jTextField3.setText(rs.getString("jenis"));
+                // If you had a deskripsi field, you'd set it here
+                jTextField2.setText(String.valueOf(rs.getInt("interval_penyiraman")));
+
+                java.sql.Date sqlTerakhirDisiram = rs.getDate("terakhir_disiram");
+                if (sqlTerakhirDisiram != null) {
+                    jDateChooser1.setDate(new java.util.Date(sqlTerakhirDisiram.getTime()));
+                } else {
+                    jDateChooser1.setDate(null);
+                }
+
+                java.sql.Date sqlJadwalBerikutnya = rs.getDate("jadwal_berikutnya");
+                if (sqlJadwalBerikutnya != null) {
+                    jDateChooser2.setDate(new java.util.Date(sqlJadwalBerikutnya.getTime()));
+                } else {
+                    jDateChooser2.setDate(null);
+                }
+            }
+            conn.close();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Gagal memuat data tanaman untuk diedit: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
+    private void initDateTimeUpdater() {
+        // Buat Timer yang akan berjalan setiap 1 detik (1000 milidetik)
+        Timer timer = new Timer(1000, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                updateDateTimeLabels();// Dijalankan setiap 1 detik di sini fungsi thread
+            }
+        });
+        timer.start(); // Mulai timer
+        updateDateTimeLabels(); // Panggil sekali saat inisialisasi agar langsung tampil
+    }
+
+    private void updateDateTimeLabels() {
+        LocalDateTime now = LocalDateTime.now();
+
+        // Format untuk tanggal: Hari, DD Bulan YYYY (misal: Minggu, 29 Juni 2025)
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("EEEE, dd MMMM yyyy", new java.util.Locale("id", "ID"));
+        String formattedDate = now.format(dateFormatter);
+        labelDate.setText("Tanggal: " + formattedDate); // Menggunakan jLabel9 untuk tanggal
+
+        // Format untuk jam: HH:mm:ss (misal: 20:36:36)
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+        String formattedTime = now.format(timeFormatter);
+        labelTime.setText("Jam: " + formattedTime); // Menggunakan jLabel10 untuk jam
+    }
 
 }
